@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Alarme</title>
+    <script src="https://www.gstatic.com/firebasejs/6.1.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/6.1.1/firebase-database.js"></script>
+    <script src="./firebase.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 50px;
+            transition: background-color 0.5s;
+        }
+        .ativo {
+            background-color: red;
+        }
+        .desativado {
+            background-color: gray;
+        }
+    </style>
+</head>
+<body>
+    <h1>Controle de Alarme</h1>
+    <div>
+        <button onclick="toggleAlarm()" id="toggleButton" class="desativado">Ativar Alarme</button>
+    </div>
+    <div id="status">Estado do Alarme: Desativado</div>
+    <div id="lastActivated">Última Ativação: Aguardando dados...</div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            initializeApp();
+        });
+
+        function initializeApp() {
+            // Referência para o nó "alarm" no Realtime Database
+            var alarmRef = firebase.database().ref('alarm');
+
+            // Adiciona um ouvinte de eventos para detectar alterações no estado do alarme
+            alarmRef.child('state').on('value', function (snapshot) {
+                var isAlarmOn = snapshot.val();
+                updateUI(isAlarmOn);
+            });
+
+            // Adiciona um ouvinte de eventos para detectar alterações no horário da última ativação
+            alarmRef.child('lastTimeActivated').on('value', function (snapshot) {
+                var lastActivatedTime = snapshot.val();
+                updateLastActivatedTime(lastActivatedTime);
+            });
+        }
+
+        function toggleAlarm() {
+            var alarmRef = firebase.database().ref('alarm');
+
+            // Obtém o estado atual do alarme
+            alarmRef.child('state').once('value', function (snapshot) {
+                var isAlarmOn = snapshot.val();
+
+                // Inverte o estado do alarme
+                alarmRef.child('state').set(!isAlarmOn);
+            });
+        }
+
+        function updateUI(isAlarmOn) {
+            var statusElement = document.getElementById('status');
+            var toggleButton = document.getElementById('toggleButton');
+            var body = document.body;
+
+            // Atualiza o texto do botão e o estado do corpo da página
+            if (isAlarmOn) {
+                statusElement.textContent = 'Estado do Alarme: Ativado';
+                toggleButton.textContent = 'Desativar Alarme';
+                body.classList.remove('desativado');
+                body.classList.add('ativo');
+            } else {
+                statusElement.textContent = 'Estado do Alarme: Desativado';
+                toggleButton.textContent = 'Ativar Alarme';
+                body.classList.remove('ativo');
+                body.classList.add('desativado');
+            }
+        }
+
+        function updateLastActivatedTime(lastActivatedTime) {
+            var lastActivatedElement = document.getElementById('lastActivated');
+            lastActivatedElement.textContent = 'Última Ativação: ' + (lastActivatedTime || 'Aguardando dados...');
+        }
+
+    </script>
+</body>
+</html>
